@@ -6,9 +6,10 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-AVAX_RPC_URL = os.getenv("INFURA_URL")  # Avalanche RPC
-CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
-PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+AVAX_RPC_URL = os.getenv("https://avalanche-mainnet.infura.io/v3/9e0d26da1f324dda9080cd79da131768")  # Avalanche RPC
+CONTRACT_ADDRESS = os.getenv("0x7338410F9c4335422e63ace32b4f7C7abb5C7C8A")
+PRIVATE_KEY = os.getenv("9e0d26da1f324dda9080cd79da131768")
+
 
 CONTRACT_ABI = json.loads("""
 [
