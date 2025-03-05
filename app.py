@@ -2,12 +2,15 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import os
 import ipfshttpclient
 from blockchain_system import Blockchain, SecureIPFSStorage, UserManager  # Backend logic
-from blockchain import log_transaction
+from blockchain.blockchain import log_transaction
 from werkzeug.utils import secure_filename
 
 # Flask app setup
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Secure session key
+
+import secrets
+app.secret_key = secrets.token_hex(32)  # More secure session key
 
 # System components
 blockchain = Blockchain()
