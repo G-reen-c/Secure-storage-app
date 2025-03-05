@@ -1,8 +1,20 @@
 {% extends "base.html" %}
+
 {% block content %}
-<form method="POST">
-    <label>Data to Upload: <textarea name="data"></textarea></label><br>
-    <button type="submit">Upload</button>
-</form>
-<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+<div class="container">
+    <h2>Upload File to Secure Storage</h2>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label for="file" class="form-label">Select File</label>
+            <input type="file" class="form-control" name="file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+
+    {% if file_hash %}
+    <div class="alert alert-success mt-3">
+        <strong>Success!</strong> File uploaded. IPFS Hash: <code>{{ file_hash }}</code>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

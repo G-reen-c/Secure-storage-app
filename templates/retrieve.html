@@ -1,8 +1,20 @@
 {% extends "base.html" %}
+
 {% block content %}
-<form method="POST">
-    <label>CID: <input type="text" name="cid"></label><br>
-    <button type="submit">Retrieve</button>
-</form>
-<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+<div class="container">
+    <h2>Retrieve File from Secure Storage</h2>
+    <form action="/retrieve" method="POST">
+        <div class="mb-3">
+            <label for="file_hash" class="form-label">Enter IPFS Hash</label>
+            <input type="text" class="form-control" name="file_hash" required>
+        </div>
+        <button type="submit" class="btn btn-success">Retrieve</button>
+    </form>
+
+    {% if file_url %}
+    <div class="alert alert-info mt-3">
+        <strong>File Available:</strong> <a href="{{ file_url }}" target="_blank">Download</a>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

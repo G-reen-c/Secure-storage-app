@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import os
+import ipfshttpclient
 from blockchain_system import Blockchain, SecureIPFSStorage, UserManager  # Import backend logic
 
 # Flask app setup
@@ -11,12 +12,18 @@ blockchain = Blockchain()  # Blockchain instance for recording CID and metadata
 storage = SecureIPFSStorage()  # IPFS instance for storing/retrieving files
 user_manager = UserManager()  # User manager instance to handle registration and login
 
+# Initialize IPFS Client
+ipfs = ipfshttpclient.connect('/ip4/127.0.0.1/tcp/5001')
 
 # Home route
 @app.route('/')
 def home():
     return redirect(url_for('login'))
 
+# Set Upload Folder
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # User Registration
 @app.route('/register', methods=['GET', 'POST'])
@@ -79,11 +86,26 @@ def upload():
         # Add transaction to blockchain
         blockchain.add_transaction(user_wallet, ipfs_cid, file_metadata)
         blockchain.create_block(data=ipfs_cid, previous_hash=blockchain.chain[-1]['hash'])
+        
 
-        flash(f"Data uploaded to IPFS. CID: {ipfs_cid}")
-        return redirect(url_for('dashboard'))  # Redirect to dashboard after upload
-    return render_template('upload.html')
+    
+    flash(f"Data uploaded to IPFS. CID: {ipfs_cid}")
+    return redirect(url_for('dashboard'))  # Redirect to dashboard after upload
+    return render_template("upload.html")
+    
 
+def upload_file():
+    if request.method == "POST":
+    file = request.files["file"]
+    if file:
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
+        file.save(file_path)  # Save locally first 
+        
+        # Upload file to IPFS
+        res = ipfs.add(file_path)
+        file_hash = res['Hash']
+        return render_template("upload.html", file_hash=file_hash)
+    
 
 # Retrieve Data
 @app.route('/retrieve', methods=['GET', 'POST'])
@@ -109,6 +131,13 @@ def retrieve():
         return redirect(url_for('dashboard'))  # Redirect to dashboard after retrieval
 
     return render_template('retrieve.html')
+
+def retrieve_file():
+    if request.method == "POST":
+        file_hash = request.form["file_hash"]
+        file_url = f"https://ipfs.io/ipfs/{file_hash}"
+        return render_template("retrieve.html", file_url=file_url)
+    return render_template("retrieve.html")
 
 
 # Logout
