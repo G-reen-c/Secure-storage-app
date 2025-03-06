@@ -26,12 +26,12 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}  # Restrict file types
 
-# ✅ **Home Route**
+# Home Route
 @app.route('/')
 def home():
     return redirect(url_for('login'))
 
-# ✅ **User Registration**
+# User Registration
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -45,7 +45,7 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
-# ✅ **User Login**
+# User Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -59,7 +59,7 @@ def login():
             return redirect(url_for('dashboard'))
     return render_template('login.html')
 
-# ✅ **User Dashboard**
+# User Dashboard
 @app.route('/dashboard')
 def dashboard():
     if 'user' not in session:
@@ -67,11 +67,11 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html')
 
-# ✅ **Check File Type Before Uploading**
+# Check File Type Before Uploading
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ✅ **File Upload & Secure Blockchain Logging**
+# File Upload & Secure Blockchain Logging
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     if 'user' not in session:
@@ -102,7 +102,7 @@ def upload_file():
 
     return render_template("upload.html")
 
-# ✅ **Retrieve File from IPFS**
+# Retrieve File from IPFS
 @app.route('/retrieve', methods=['GET', 'POST'])
 def retrieve_file():
     if 'user' not in session:
@@ -116,13 +116,13 @@ def retrieve_file():
 
     return render_template("retrieve.html")
 
-# ✅ **Logout**
+# Logout
 @app.route('/logout')
 def logout():
     session.pop('user', None)
     flash("Logged out successfully.")
     return redirect(url_for('login'))
 
-# ✅ **Run Flask**
+# Run Flask
 if __name__ == '__main__':
     app.run(debug=True)
