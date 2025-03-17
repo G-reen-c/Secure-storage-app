@@ -40,9 +40,9 @@ print("Connecting to Avalanche C-Chain...")  # Debugging step
 w3 = Web3(Web3.HTTPProvider(INFURA_URL))
 
 if w3.is_connected():
-    print("✅ Successfully connected to Avalanche!")
+    print("Successfully connected to Avalanche")
 else:
-    raise Exception("❌ Failed to connect to Avalanche network. Check INFURA_URL or network status.")
+    raise Exception("Failed to connect. Check INFURA_URL or network status.")
 contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
 
 
