@@ -15,12 +15,12 @@ class Blockchain:
 
     def create_block(self, data, previous_hash):
         block = {
-            'index': len(self.chain) + 1,
-            'timestamp': str(time.time()),
-            'transactions': self.transactions,
-            'data': data,
-            'previous_hash': previous_hash,
-            'hash': self.hash_block(data, previous_hash)
+            "index": len(self.chain) + 1,
+            "timestamp": str(time.time()),
+            "transactions": self.transactions,
+            "data": data,
+            "previous_hash": previous_hash,
+            "hash": self.hash_block(data, previous_hash),
         }
         self.transactions = []
         self.chain.append(block)
@@ -31,10 +31,10 @@ class Blockchain:
 
     def add_transaction(self, user_wallet, cid, file_metadata):
         transaction = {
-            'user_wallet': user_wallet,
-            'cid': cid,
-            'file_metadata': file_metadata,
-            'timestamp': str(time.time())
+            "user_wallet": user_wallet,
+            "cid": cid,
+            "file_metadata": file_metadata,
+            "timestamp": str(time.time()),
         }
         self.transactions.append(transaction)
 
@@ -42,17 +42,19 @@ class Blockchain:
         for i in range(1, len(self.chain)):
             current = self.chain[i]
             previous = self.chain[i - 1]
-            if current['previous_hash'] != previous['hash']:
+            if current["previous_hash"] != previous["hash"]:
                 return False
-            if current['hash'] != self.hash_block(current['data'], current['previous_hash']):
+            if current["hash"] != self.hash_block(
+                current["data"], current["previous_hash"]
+            ):
                 return False
         return True
 
 
 # Secure Storage with Encryption
 class SecureIPFSStorage:
-    #def __init__(self):
-        #self.ipfs_client = ipfshttpclient.connect()
+    # def __init__(self):
+    # self.ipfs_client = ipfshttpclient.connect()
 
     def encrypt_data(self, plaintext, public_key):
         return public_key.encrypt(
@@ -60,8 +62,8 @@ class SecureIPFSStorage:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
 
     def decrypt_data(self, ciphertext, private_key):
@@ -70,8 +72,8 @@ class SecureIPFSStorage:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         ).decode()
 
     def upload_to_ipfs(self, data):
@@ -99,18 +101,26 @@ class UserManager:
         )
         public_key = private_key.public_key()
         self.users[wallet_address] = {
-            'first_name': first_name,
-            'last_name': last_name,
-            'password': hashed_password,
-            'private_key': private_key,
-            'public_key': public_key
+            "first_name": first_name,
+            "last_name": last_name,
+            "password": hashed_password,
+            "private_key": private_key,
+            "public_key": public_key,
         }
         return "User registered successfully."
 
     def login_user(self, wallet_address, password):
         user = self.users.get(wallet_address)
+
         if not user:
-            return False, "User not found."
-        if bcrypt.checkpw(password.encode(), user['password']):
+            print("❌ Login Debug: User not found")  # Debugging
+            return False, "User not found.", None  
+
+        if bcrypt.checkpw(password.encode(), user["password"]):
+            print(f"✅ Login Debug: User {user['first_name']} logged in with Wallet {wallet_address}")  # Debugging
             return True, f"Welcome {user['first_name']}!", user
-        return False, "Invalid credentials.", None
+
+        print("❌ Login Debug: Invalid credentials")  # Debugging
+        return False, "Invalid credentials.", None  
+
+    

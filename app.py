@@ -5,6 +5,12 @@ import secrets
 from blockchain_system import Blockchain, SecureIPFSStorage, UserManager  # Backend logic
 from blockchain.blockchain import log_transaction
 from werkzeug.utils import secure_filename
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+from models import db, User, File  # Import models
+import re
+
+
 
 # Flask app setup
 app = Flask(__name__)
@@ -105,20 +111,42 @@ def upload_file():
                 ipfs_cid = upload_to_ipfs(file_path)
 
                 # Blockchain Logging
-                user_wallet = session['user']
+                user_wallet = session['user']  # This should be the real wallet address
                 private_key = session.get("private_key")  # Ensure private key is secure
-                txn_hash = log_transaction(ipfs_cid, user_wallet, private_key) if private_key else "Blockchain logging failed."
+
+                # ✅ Debug: Print wallet address and check if it's valid
+                print(f"🔍 Debug - Stored Wallet Address: {user_wallet}")
+
+                if user_wallet == "1":
+                    print("❌ ERROR: Invalid Wallet Address! Expected a real Ethereum address.")
+                    flash("Invalid wallet address. Please re-login with a valid address.")
+                    return redirect(url_for("login"))
+
+                txn_hash = log_transaction(ipfs_cid, user_wallet)
+
+                print(f"🔍 Blockchain Debug - Transaction Hash: {txn_hash}")
+
+                # ✅ Store Transaction in the Database
+                new_transaction = File(file_hash=ipfs_cid, owner_wallet=user_wallet)
+                db.session.add(new_transaction)
+                db.session.commit()
+
+                print(f"✅ Transaction Saved: {txn_hash}")
 
                 flash(f"File uploaded successfully. CID: {ipfs_cid}")
                 return render_template("upload.html", file_hash=ipfs_cid, txn_hash=txn_hash)
 
             except Exception as e:
                 flash(f"Upload failed: {str(e)}")
+                print(f"❌ Error: {e}")
 
         flash("Invalid file type. Allowed types: txt, pdf, png, jpg, jpeg, gif.")
         return redirect(url_for('upload_file'))
 
     return render_template("upload.html")
+
+
+
 
 # Retrieve File from IPFS
 @app.route('/retrieve', methods=['GET', 'POST'])
@@ -129,10 +157,33 @@ def retrieve_file():
 
     if request.method == "POST":
         file_hash = request.form["file_hash"]
-        file_url = f"https://gateway.pinata.cloud/ipfs/{file_hash}" if file_hash else None
+        file_url = f"https://beige-actual-cattle-585.mypinata.cloud/ipfs/{file_hash}" if file_hash else None
         return render_template("retrieve.html", file_url=file_url)
 
     return render_template("retrieve.html")
+
+@app.route('/transactions')
+def transactions():
+    if 'user' not in session:
+        flash("Please log in first.")
+        return redirect(url_for('login'))
+
+    # Retrieve transactions from DB
+    transactions = File.query.filter_by(owner_wallet=session['user']).all()
+
+    # Convert transactions to required format
+    transactions_data = [
+        {
+            "index": i + 1,
+            "timestamp": "Stored in Database",
+            "user_wallet": txn.owner_wallet,
+            "cid": txn.file_hash,
+            "file_metadata": "File stored in IPFS"
+        }
+        for i, txn in enumerate(transactions)
+    ]
+
+    return render_template("transactions.html", transactions=transactions_data)
 
 # Logout
 @app.route('/logout')
@@ -140,6 +191,14 @@ def logout():
     session.pop('user', None)
     flash("Logged out successfully.")
     return redirect(url_for('login'))
+
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if os.getenv("DATABASE_URL") else "sqlite:///local.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Avoid warnings
+
+db = SQLAlchemy(app)  # Initialize SQLAlchemy
+migrate = Migrate(app, db)  # Bind Flask-Migrate to the app
+
 
 # Run Flask
 if __name__ == '__main__':

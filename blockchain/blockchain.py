@@ -2,6 +2,7 @@ from web3 import Web3
 import json
 import os
 from dotenv import load_dotenv
+from models import db, File  # Import database models
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -59,12 +60,19 @@ def log_transaction(file_hash, user_address):
 
         signed_txn = w3.eth.account.sign_transaction(txn, PRIVATE_KEY)
         txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction)
+        txn_hash_hex = w3.to_hex(txn_hash)
 
-        return w3.to_hex(txn_hash)
+        # Save transaction in the database
+        new_transaction = File(file_hash=file_hash, owner_wallet=user_address)
+        db.session.add(new_transaction)
+        db.session.commit()
+
+        print(f"Blockchain Transaction Logged - TXN Hash: {txn_hash_hex}")
+        return txn_hash_hex
 
     except Exception as e:
+        print(f"Blockchain Logging Failed: {str(e)}")
         return f"Transaction failed: {str(e)}"
-
 
 def get_user_transactions(user_address):
     try:

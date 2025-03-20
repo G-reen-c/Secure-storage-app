@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mt-4">Transaction History</h2>
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th>Block #</th>
+            <th>Timestamp</th>
+            <th>User Wallet</th>
+            <th>File CID</th>
+            <th>File Metadata</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for txn in transactions %}
+        <tr>
+            <td>{{ txn.index }}</td>
+            <td>{{ txn.timestamp }}</td>
+            <td>{{ txn.user_wallet }}</td>
+            <td><a href="https://beige-actual-cattle-585.mypinata.cloud/ipfs/{{ txn.cid }}" target="_blank">{{ txn.cid }}</a></td>
+            <td>{{ txn.file_metadata }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
