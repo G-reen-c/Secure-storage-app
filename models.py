@@ -12,4 +12,4 @@ class User(db.Model):
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     file_hash = db.Column(db.String(255), nullable=False)
-    owner_wallet = db.Column(db.String(255), db.ForeignKey('user.wallet_address'), nullable=False)
+    owner_wallet = db.Column(db.String(255), db.ForeignKey('users.wallet_address'), nullable=False)

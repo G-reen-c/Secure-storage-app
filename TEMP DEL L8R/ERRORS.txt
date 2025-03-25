@@ -1,0 +1,1 @@
+Upload failed: (sqlite3.OperationalError) no such table: file [SQL: INSERT INTO file (file_hash, owner_wallet) VALUES (?, ?)] [parameters: ('QmX3LUYtncqY2KhAL81tg1KVs83oRGG6Gbg9u1bmac4Hiw', '0x7338410F9c4335422e63ace32b4f7C7abb5C7C8A')] (Background on this error at: https://sqlalche.me/e/20/e3q8)

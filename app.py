@@ -192,12 +192,16 @@ def logout():
     flash("Logged out successfully.")
     return redirect(url_for('login'))
 
+db_url = os.getenv("DATABASE_URL", "sqlite:///local.db")
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL").replace("postgres://", "postgresql://", 1) if os.getenv("DATABASE_URL") else "sqlite:///local.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Avoid warnings
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url  
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  
 
-db = SQLAlchemy(app)  # Initialize SQLAlchemy
-migrate = Migrate(app, db)  # Bind Flask-Migrate to the app
+# Initialize database and migration
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
 # Run Flask
