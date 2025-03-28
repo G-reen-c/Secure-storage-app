@@ -2,19 +2,34 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 import os
 import requests
 import secrets
-from blockchain_system import Blockchain, SecureIPFSStorage, UserManager  # Backend logic
-from blockchain.blockchain import log_transaction
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from models import db, User, File  # Import models
 import re
-
-
 
 # Flask app setup
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)  # More secure session key
+
+# Get database URL from environment variables
+db_url = os.getenv("DATABASE_URL")
+
+# Fix 'postgres://' to 'postgresql://' (required for SQLAlchemy)
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url  
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Initialize database and migration
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
+from models import User, File
+
+from blockchain_system import Blockchain, SecureIPFSStorage, UserManager  # Backend logic
+from blockchain.blockchain import log_transaction
 
 # System components
 blockchain = Blockchain()
@@ -45,8 +60,21 @@ def register():
         wallet_address = request.form['wallet_address']
         password = request.form['password']
 
-        message = user_manager.register_user(first_name, last_name, wallet_address, password)
-        flash(message)
+        # Check if user already exists
+        existing_user = User.query.filter_by(wallet_address=wallet_address).first()
+        if existing_user:
+            flash("Wallet already registered.")
+            return redirect(url_for('register'))
+
+        # Hash password securely before saving
+        hashed_password = generate_password_hash(password)
+
+        # Create new user and commit to DB
+        new_user = User(first_name=first_name, last_name=last_name, wallet_address=wallet_address, password_hash=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()  
+
+        flash("Registration successful. Please log in.")
         return redirect(url_for('login'))
     return render_template('register.html')
 
@@ -56,13 +84,26 @@ def login():
     if request.method == 'POST':
         wallet_address = request.form['wallet_address']
         password = request.form['password']
-        is_logged_in, message, user = user_manager.login_user(wallet_address, password)
 
-        flash(message)
-        if is_logged_in:
-            session['user'] = wallet_address  # Store session
-            return redirect(url_for('dashboard'))
+        # Check if user exists
+        user = User.query.filter_by(wallet_address=wallet_address).first()
+
+        if not user:
+            flash("User not found. Please register first.")
+            return redirect(url_for('register'))
+
+        # Check password hash
+        if not check_password_hash(user.password_hash, password):
+            flash("Incorrect password. Please try again.")
+            return redirect(url_for('login'))
+
+        # If login successful, store user in session
+        session['user'] = user.wallet_address  # Use wallet_address as session key
+        flash("Login successful!")
+        return redirect(url_for('dashboard'))
+
     return render_template('login.html')
+
 
 # User Dashboard
 @app.route('/dashboard')
@@ -114,7 +155,7 @@ def upload_file():
                 user_wallet = session['user']  # This should be the real wallet address
                 private_key = session.get("private_key")  # Ensure private key is secure
 
-                # ✅ Debug: Print wallet address and check if it's valid
+                # Debug: Print wallet address and check if it's valid
                 print(f"🔍 Debug - Stored Wallet Address: {user_wallet}")
 
                 if user_wallet == "1":
@@ -126,12 +167,12 @@ def upload_file():
 
                 print(f"🔍 Blockchain Debug - Transaction Hash: {txn_hash}")
 
-                # ✅ Store Transaction in the Database
+                # Store Transaction in the Database
                 new_transaction = File(file_hash=ipfs_cid, owner_wallet=user_wallet)
                 db.session.add(new_transaction)
                 db.session.commit()
 
-                print(f"✅ Transaction Saved: {txn_hash}")
+                print(f"Transaction Saved: {txn_hash}")
 
                 flash(f"File uploaded successfully. CID: {ipfs_cid}")
                 return render_template("upload.html", file_hash=ipfs_cid, txn_hash=txn_hash)
@@ -144,8 +185,6 @@ def upload_file():
         return redirect(url_for('upload_file'))
 
     return render_template("upload.html")
-
-
 
 
 # Retrieve File from IPFS
@@ -191,18 +230,6 @@ def logout():
     session.pop('user', None)
     flash("Logged out successfully.")
     return redirect(url_for('login'))
-
-db_url = os.getenv("DATABASE_URL", "sqlite:///local.db")
-if db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql://", 1)
-
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url  
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  
-
-# Initialize database and migration
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-
 
 # Run Flask
 if __name__ == '__main__':

@@ -1,1 +1,21 @@
-Upload failed: (sqlite3.OperationalError) no such table: file [SQL: INSERT INTO file (file_hash, owner_wallet) VALUES (?, ?)] [parameters: ('QmX3LUYtncqY2KhAL81tg1KVs83oRGG6Gbg9u1bmac4Hiw', '0x7338410F9c4335422e63ace32b4f7C7abb5C7C8A')] (Background on this error at: https://sqlalche.me/e/20/e3q8)
+C:\Users\Cal\Desktop\project>heroku pg:psql --app secure-storage-app
+--> Connecting to postgresql-metric-47260
+psql (17.4, server 16.4)
+WARNING: Console code page (850) differs from Windows code page (1252)
+         8-bit characters might not work correctly. See psql reference
+         page "Notes for Windows users" for details.
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off, ALPN: none)
+Type "help" for help.
+
+secure-storage-app::DATABASE=> \dt
+                 List of relations
+ Schema |      Name       | Type  |     Owner
+--------+-----------------+-------+----------------
+ public | alembic_version | table | u6rl05rpngj3kn
+(1 row)
+
+
+secure-storage-app::DATABASE=> \q
+Terminate batch job (Y/N)? y
+
+C:\Users\Cal\Desktop\project>

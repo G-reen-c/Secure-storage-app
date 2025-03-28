@@ -5,6 +5,16 @@ from flask import current_app
 
 from alembic import context
 
+import os
+import sys
+
+# Add the project root to sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+
+print("Updated sys.path includes:")
+for p in sys.path:
+    print(p)
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -33,6 +43,14 @@ def get_engine_url():
 
 
 # add your model's MetaData object here
+import sys
+import os
+
+# Add project root directory to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Import models
+from models import db  # Ensure this matches the filename
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
@@ -45,31 +63,22 @@ target_db = current_app.extensions['migrate'].db
 # ... etc.
 
 
-def get_metadata():
-    if hasattr(target_db, 'metadatas'):
-        return target_db.metadatas[None]
-    return target_db.metadata
-
+target_metadata = db.metadata  # Explicitly setting metadata
 
 def run_migrations_offline():
-    """Run migrations in 'offline' mode.
+    
+    """Run migrations in 'offline' mode."""
 
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, target_metadata=get_metadata(), literal_binds=True
+        url=url,  # Use URL instead of connection
+        target_metadata=target_metadata,  # Explicitly setting metadata
+        literal_binds=True
     )
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 
 def run_migrations_online():
@@ -99,7 +108,7 @@ def run_migrations_online():
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
-            target_metadata=get_metadata(),
+            target_metadata=target_metadata,  # Explicitly setting metadata
             **conf_args
         )
 
