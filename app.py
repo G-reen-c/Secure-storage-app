@@ -10,7 +10,7 @@ import re
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)  # More secure session key
+app.secret_key = os.getenv("SECRET_KEY", "0x7338410F9c4335422e63ace32b4f7C7abb5C7C8A")  # More secure session key
 
 # Get database URL from environment variables
 db_url = os.getenv("DATABASE_URL")
@@ -79,6 +79,9 @@ def register():
     return render_template('register.html')
 
 # User Login
+from datetime import timedelta
+app.permanent_session_lifetime = timedelta(days=7)  # Keep session for a week
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -108,7 +111,7 @@ def login():
 # User Dashboard
 @app.route('/dashboard')
 def dashboard():
-    if 'user' not in session:
+    if not session.get('user'):
         flash("Please log in first.")
         return redirect(url_for('login'))
     return render_template('dashboard.html')
@@ -136,7 +139,7 @@ def upload_to_ipfs(file_path):
 # File Upload & Secure Blockchain Logging
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
-    if 'user' not in session:
+    if not session.get('user'):
         flash("Please log in first.")
         return redirect(url_for('login'))
 
@@ -190,9 +193,10 @@ def upload_file():
 # Retrieve File from IPFS
 @app.route('/retrieve', methods=['GET', 'POST'])
 def retrieve_file():
-    if 'user' not in session:
+    if not session.get('user'):
         flash("Please log in first.")
         return redirect(url_for('login'))
+
 
     if request.method == "POST":
         file_hash = request.form["file_hash"]
@@ -203,7 +207,7 @@ def retrieve_file():
 
 @app.route('/transactions')
 def transactions():
-    if 'user' not in session:
+    if not session.get('user'):
         flash("Please log in first.")
         return redirect(url_for('login'))
 
