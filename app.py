@@ -51,9 +51,13 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}  # Restrict fil
 def home():
     return redirect(url_for('login'))
 
+import csv
+import time # for testing
+
 # User Registration
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    start_time = time.time()  # Start time
     if request.method == 'POST':
         first_name = request.form['first_name']
         last_name = request.form['last_name']
@@ -75,15 +79,36 @@ def register():
         db.session.commit()  
 
         flash("Registration successful. Please log in.")
+        
+        end_time = time.time()  # End time
+        latency = end_time - start_time  # Calculate latency
+
+        # Save latency data to CSV
+        log_latency("register", latency)
+        
         return redirect(url_for('login'))
     return render_template('register.html')
 
+
+# Function to log latency data into a CSV file
+def log_latency(action, latency):
+    file_path = "latency_data.csv"
+    try:
+        with open(file_path, mode="a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([action, latency])
+    except Exception as e:
+        print(f"Error writing latency data: {e}")
+        
+        
 # User Login
 from datetime import timedelta
 app.permanent_session_lifetime = timedelta(days=7)  # Keep session for a week
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    start_time = time.time()  # Start time
+    
     if request.method == 'POST':
         wallet_address = request.form['wallet_address']
         password = request.form['password']
@@ -103,8 +128,13 @@ def login():
         # If login successful, store user in session
         session['user'] = user.wallet_address  # Use wallet_address as session key
         flash("Login successful!")
+        end_time = time.time()  # End time
+        log_latency("login", end_time - start_time)  # Log latency
         return redirect(url_for('dashboard'))
-
+    
+    
+    end_time = time.time()  # End time for failed attempts
+    log_latency("login_failed", end_time - start_time)
     return render_template('login.html')
 
 
@@ -143,6 +173,8 @@ def upload_file():
         flash("Please log in first.")
         return redirect(url_for('login'))
 
+    start_time = time.time()  # Start time
+
     if request.method == "POST":
         file = request.files["file"]
         if file and allowed_file(file.filename):
@@ -159,16 +191,16 @@ def upload_file():
                 private_key = session.get("private_key")  # Ensure private key is secure
 
                 # Debug: Print wallet address and check if it's valid
-                print(f"🔍 Debug - Stored Wallet Address: {user_wallet}")
+                print(f"Debug - Stored Wallet Address: {user_wallet}")
 
                 if user_wallet == "1":
-                    print("❌ ERROR: Invalid Wallet Address! Expected a real Ethereum address.")
+                    print("ERROR: Invalid Wallet Address! Expected a real wallet address.")
                     flash("Invalid wallet address. Please re-login with a valid address.")
                     return redirect(url_for("login"))
 
                 txn_hash = log_transaction(ipfs_cid, user_wallet)
 
-                print(f"🔍 Blockchain Debug - Transaction Hash: {txn_hash}")
+                print(f"Blockchain Debug - Transaction Hash: {txn_hash}")
 
                 # Store Transaction in the Database
                 new_transaction = File(file_hash=ipfs_cid, owner_wallet=user_wallet)
@@ -178,15 +210,22 @@ def upload_file():
                 print(f"Transaction Saved: {txn_hash}")
 
                 flash(f"File uploaded successfully. CID: {ipfs_cid}")
+                
+                end_time = time.time()  # End time
+                log_latency("upload_file", end_time - start_time)  # Log latency
+                
                 return render_template("upload.html", file_hash=ipfs_cid, txn_hash=txn_hash)
 
             except Exception as e:
                 flash(f"Upload failed: {str(e)}")
-                print(f"❌ Error: {e}")
+                print(f"Error: {e}")
 
         flash("Invalid file type. Allowed types: txt, pdf, png, jpg, jpeg, gif.")
         return redirect(url_for('upload_file'))
-
+    
+    
+    end_time = time.time()  # End time for failed attempts
+    log_latency("upload_failed", end_time - start_time)
     return render_template("upload.html")
 
 
@@ -211,6 +250,8 @@ def transactions():
         flash("Please log in first.")
         return redirect(url_for('login'))
 
+    start_time = time.time()  # Start time
+
     # Retrieve transactions from DB
     transactions = File.query.filter_by(owner_wallet=session['user']).all()
 
@@ -225,6 +266,9 @@ def transactions():
         }
         for i, txn in enumerate(transactions)
     ]
+
+    end_time = time.time()  # End time
+    log_latency("retrieve_transactions", end_time - start_time)  # Log latency
 
     return render_template("transactions.html", transactions=transactions_data)
 

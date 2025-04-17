@@ -53,9 +53,6 @@ class Blockchain:
 
 # Secure Storage with Encryption
 class SecureIPFSStorage:
-    # def __init__(self):
-    # self.ipfs_client = ipfshttpclient.connect()
-
     def encrypt_data(self, plaintext, public_key):
         return public_key.encrypt(
             plaintext.encode(),
@@ -113,14 +110,14 @@ class UserManager:
         user = self.users.get(wallet_address)
 
         if not user:
-            print("❌ Login Debug: User not found")  # Debugging
+            print("Login Debug: User not found")  # Debugging
             return False, "User not found.", None  
 
         if bcrypt.checkpw(password.encode(), user["password"]):
-            print(f"✅ Login Debug: User {user['first_name']} logged in with Wallet {wallet_address}")  # Debugging
+            print(f"Login Debug: User {user['first_name']} logged in with Wallet {wallet_address}")  # Debugging
             return True, f"Welcome {user['first_name']}!", user
 
-        print("❌ Login Debug: Invalid credentials")  # Debugging
+        print("Login Debug: Invalid credentials")  # Debugging
         return False, "Invalid credentials.", None  
 
     
